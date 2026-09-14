@@ -1,0 +1,8 @@
+{
+  "scripts": {
+    "build:local": "npm --prefix frontend run build:local && powershell -Command \"Copy-Item -Path 'frontend/dist/*' -Destination 'local_node/dashboard_web/dist' -Recurse -Force\""
+  },
+  "dependencies": {
+    "sweetalert2": "^11.26.25"
+  }
+}

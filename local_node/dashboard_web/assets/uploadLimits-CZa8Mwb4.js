@@ -1,0 +1,1 @@
+var e=5*1024*1024,t=64*1024*1024,n=e=>e>=1024*1024?`${(e/1024/1024).toFixed(1)}MB`:`${Math.max(1,Math.round(e/1024))}KB`,r=(e,t,r=`File`)=>e.size>t?`${r} is ${n(e.size)}. Maximum is ${n(t)}.`:null;export{t as n,r,e as t};
