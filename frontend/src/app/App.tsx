@@ -1,12 +1,50 @@
+import { useEffect, useRef, useState } from "react";
 import { RouterProvider } from "react-router-dom";
 import type { ReactNode } from "react";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { AuthProvider } from "../app/client-dashboard/contexts/AuthContext";
-import { OrgConfigProvider } from "../app/client-dashboard/contexts/OrgConfigContext";
+import {
+  OrgConfigProvider,
+  useOrg,
+} from "../app/client-dashboard/contexts/OrgConfigContext";
 import { TenantConfigProvider } from "../app/client-dashboard/contexts/TenantConfigContext";
 import { useAuth } from "../app/client-dashboard/contexts/useAuth";
 import { router } from "../app/client-dashboard/routes";
+import SplashScreen from "./SplashScreen";
+import WelcomeScreen from "./WelcomeScreen";
+
+/**
+ * Shows WelcomeScreen once, right after a successful login (isAuthenticated
+ * false -> true), never on a mount/reload where the session was already
+ * authenticated. Must sit inside AuthProvider + OrgConfigProvider for
+ * useAuth()/useOrg().
+ */
+function PostLoginWelcome() {
+  const { isAuthenticated } = useAuth();
+  const { organizationName } = useOrg();
+  const [showWelcome, setShowWelcome] = useState(false);
+  const wasAuthRef = useRef<boolean | null>(null);
+
+  useEffect(() => {
+    if (wasAuthRef.current === null) {
+      wasAuthRef.current = isAuthenticated;
+      return;
+    }
+    if (isAuthenticated && !wasAuthRef.current) {
+      setShowWelcome(true);
+    }
+    wasAuthRef.current = isAuthenticated;
+  }, [isAuthenticated]);
+
+  if (!showWelcome) return null;
+  return (
+    <WelcomeScreen
+      orgName={organizationName || "your organization"}
+      onFinish={() => setShowWelcome(false)}
+    />
+  );
+}
 
 /**
  * Bridges AuthContext -> TenantConfigProvider.
@@ -28,14 +66,19 @@ function AuthenticatedTenantConfig({ children }: { children: ReactNode }) {
 }
 
 export default function App() {
+  const [showSplash, setShowSplash] = useState(true);
   return (
-    <AuthProvider>
-      <ToastContainer position="top-right" />
-      <AuthenticatedTenantConfig>
-        <OrgConfigProvider>
-          <RouterProvider router={router} />
-        </OrgConfigProvider>
-      </AuthenticatedTenantConfig>
-    </AuthProvider>
+    <>
+      {showSplash && <SplashScreen onFinish={() => setShowSplash(false)} />}
+      <AuthProvider>
+        <ToastContainer position="top-right" />
+        <AuthenticatedTenantConfig>
+          <OrgConfigProvider>
+            <PostLoginWelcome />
+            <RouterProvider router={router} />
+          </OrgConfigProvider>
+        </AuthenticatedTenantConfig>
+      </AuthProvider>
+    </>
   );
 }

@@ -7,7 +7,7 @@
     "dev": "vite",
     "dev:local": "vite --mode localnode",
     "build": "vite build",
-    "build:local": "vite build --mode localnode",
+    "build:local": "vite build --mode local",
     "lint": "eslint .",
     "preview": "vite preview"
   },

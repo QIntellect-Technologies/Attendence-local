@@ -540,7 +540,7 @@ import threading
 import time
 from pathlib import Path
 
-from flask import Flask, Response, jsonify, request, send_from_directory
+from flask import Flask, Response, abort, jsonify, request, send_from_directory
 
 from local_node import local_db
 from local_node.activation import activate_with_token
@@ -1059,10 +1059,25 @@ def create_app() -> Flask:
             return send_from_directory(dist, "index.html")
         return f"Build not found. Run: {build_hint}", 200
 
+    # Paths whose absence must be a hard 404. Anything else is treated as a
+    # client-side route and gets the SPA fallback.
+    _ASSET_SUFFIXES = frozenset({
+        ".js", ".mjs", ".css", ".map", ".json",
+        ".svg", ".png", ".ico", ".woff", ".woff2",
+    })
+
     def _serve_spa_asset(dist: Path, path: str, build_hint: str):
         target = dist / path
-        if target.exists() and target.is_file():
+        if target.is_file():
             return send_from_directory(dist, path)
+        # A missing bundle must 404, not fall through to index.html.
+        # Answering a <script type="module"> request with HTML at status 200
+        # makes the browser refuse to execute it: the page renders as an
+        # empty <div id="root"> with no 404, no server error and no log
+        # line. That is the single hardest failure in this app to diagnose
+        # remotely, and it is what a mis-staged dashboard_web/dist produces.
+        if Path(path).suffix.lower() in _ASSET_SUFFIXES:
+            abort(404)
         return _serve_spa(dist, build_hint)
 
     # Default route: the client-dashboard SPA (Staff Management,

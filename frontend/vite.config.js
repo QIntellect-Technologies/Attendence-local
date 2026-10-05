@@ -55,6 +55,22 @@ export default defineConfig(({ mode }) => {
   return {
     plugins: [react(), tailwindcss()],
 
+    // Mode-scoped output directory. Two things this prevents:
+    //
+    //  1. Collision with the Python build. Nuitka and PyInstaller both use
+    //     <repo>/dist (main.dist, main_pyinstaller, installer/). Vite empties
+    //     outDir by default, so a frontend build landing there would delete
+    //     the compiled app folders and the packaged installer.
+    //  2. The cloud build and the local-node build differ (VITE_DEPLOYMENT_MODE,
+    //     API base) and must never overwrite each other in a shared folder.
+    //
+    // local_node/build/frontend_assets.py copies dist-localnode/ into
+    // local_node/dashboard_web/dist, which is what ui_server.py serves at "/".
+    build: {
+      outDir: mode === "localnode" ? "dist-localnode" : "dist",
+      emptyOutDir: true,
+    },
+
     server: {
       port: 5173,
       strictPort: true, // Fail fast instead of silently binding to next port

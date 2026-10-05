@@ -242,7 +242,7 @@ const Login: React.FC = () => {
               {success
                 ? loginRequiresOnboarding
                   ? "Continue setup"
-                  : "Welcome back! 👋"
+                  : "Welcome back!"
                 : storedUserNeedsOnboarding
                   ? "Organization setup pending"
                   : "Sign in to your account"}
